@@ -4,6 +4,7 @@
 # which allows the code to run.
 # export DISPLAY=:0 # doesnt appear to do anything
 import gym
+from gym import wrappers
 import time
 import pyprind
 import numpy as np
@@ -13,7 +14,7 @@ num_episodes = 10
 render_option = False
 # MountainCar-v0, CartPole-v0, MsPacman-v0
 env = gym.make(game)
-mode = 'auto'
+mode = 'nonauto'
 def run_episode(env, weights, render_option=False):  
     observation = env.reset()
     totalreward = 0
@@ -22,8 +23,7 @@ def run_episode(env, weights, render_option=False):
         if render_option: env.render()
         action = 0 if np.matmul(weights, params) < 0 else 1
         observation_new, reward, done, info = env.step(action)
-        params = np.r_[ observation_new, params[ 0:observation.shape[0] ] ] # update params for next trial
-        # params = observation_new
+        params = np.r_[ observation_new, params[ 0:observation.shape[0] ] ] if mode == 'auto' else observation_new # update params for next trial
         totalreward += reward
         if done:
             break
@@ -33,7 +33,7 @@ num_repeats = 500
 num_wins = 0
 eps_required = []
 mean_score = []
-for repeat in range(num_repeats):
+for repeat in pyprind.prog_bar(range(num_repeats)):
     bestweights = None  
     bestreward = 0  
     num_trials = 100
@@ -63,5 +63,4 @@ for repeat in range(num_repeats):
                     break
                 
     # print bestweights
-print 'Success rate %d%% out of %d repetitions with mean %d number of episodes required (var = %d) \n and mean mean score of %d (var = %d).'%(100*num_wins/num_repeats, num_repeats, np.mean(eps_required), np.var(eps_required), np.mean(mean_score), np.var(mean_score))
-
+print 'Success rate %d%% out of %d repetitions with mean %d number of episodes required (var = %f) \n and mean mean score of %d (var = %f).'%(100*num_wins/num_repeats, num_repeats, np.mean(eps_required), np.std(eps_required), np.mean(mean_score), np.var(mean_score))
